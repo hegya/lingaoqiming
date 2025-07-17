@@ -82,6 +82,54 @@ header {
 	background-color: #3a3a3a;
 }
 
+
+/* 卷列表样式 */
+.volume-item {
+	margin-bottom: 0.5rem;
+}
+
+.volume-title {
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+	padding: 0.2rem;
+	background-color: #f8f5f0;
+	border-radius: 4px;
+}
+
+.dark-mode .volume-title {
+	background-color: #2a2a2a;
+}
+
+.volume-title:hover {
+	background-color: #f0f0f0;
+}
+
+.dark-mode .volume-title:hover {
+	background-color: #3a3a3a;
+}
+
+.volume-title::before {
+	content: '▶';
+	margin-right: 0.2rem;
+	font-size: 0.8rem;
+	transition: transform 0.3s;
+}
+
+.volume-title.expanded::before {
+	transform: rotate(90deg);
+}
+
+.chapter-list {
+	margin-left: 1rem;
+	margin-top: 0.5rem;
+	display: none;
+}
+
+.chapter-list.visible {
+	display: block;
+}
+
 /* 主内容样式 */
 .main-content {
 	flex: 1;
