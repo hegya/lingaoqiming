@@ -153,13 +153,17 @@
 			volumeList.innerHTML = '';
 
 			novelStructure.volumes.forEach(volume => {
-				const volumeItem = document.createElement('li');
-				volumeItem.innerHTML = `<strong>${volume.title}</strong>`;
-				volumeList.appendChild(volumeItem);
+				const volumeItem = document.createElement('div');
+				volumeItem.className = 'volume-item';
+
+				const volumeTitle = document.createElement('div');
+				volumeTitle.className = 'volume-title';
+				volumeTitle.innerHTML = `<span>${volume.title}</span>`;
+				volumeTitle.dataset.volumeId = volume.id;
 
 				const chapterList = document.createElement('ul');
-				chapterList.style.marginLeft = '1rem';
-				chapterList.style.marginTop = '0.5rem';
+				chapterList.className = 'chapter-list';
+				chapterList.dataset.volumeId = volume.id;
 
 				volume.chapters.forEach(chapter => {
 					const chapterItem = document.createElement('li');
@@ -176,7 +180,32 @@
 					chapterList.appendChild(chapterItem);
 				});
 
-				volumeList.appendChild(chapterList);
+				// 折叠/展开卷
+				volumeTitle.addEventListener('click', () => {
+					const isExpanded = chapterList.classList.contains('visible');
+
+					if (isExpanded) {
+						chapterList.classList.remove('visible');
+						volumeTitle.classList.remove('expanded');
+					} else {
+						chapterList.classList.add('visible');
+						volumeTitle.classList.add('expanded');
+					}
+
+					// 保存卷的展开状态
+					localStorage.setItem(`volume_${volume.id}_expanded`, isExpanded ? 'false' : 'true');
+				});
+
+				// 检查是否保存了展开状态
+				const savedExpanded = localStorage.getItem(`volume_${volume.id}_expanded`);
+				if (savedExpanded === 'true') {
+					chapterList.classList.add('visible');
+					volumeTitle.classList.add('expanded');
+				}
+
+				volumeItem.appendChild(volumeTitle);
+				volumeItem.appendChild(chapterList);
+				volumeList.appendChild(volumeItem);
 			});
 		}
 
@@ -278,6 +307,9 @@
 
 					// 添加到最近阅读
 					addToRecent(volumeId, chapterId);
+
+					// 展开当前卷
+					expandCurrentVolume(volumeId);
 				})
 				.catch(error => {
 					console.error('加载章节失败:', error);
@@ -288,6 +320,18 @@
 						<p>错误信息: ${error.message}</p>
 					`;
 				});
+		}
+
+		// 展开当前卷
+		function expandCurrentVolume(volumeId) {
+			const volumeTitle = document.querySelector(`.volume-title[data-volume-id="${volumeId}"]`);
+			const chapterList = document.querySelector(`.chapter-list[data-volume-id="${volumeId}"]`);
+
+			if (volumeTitle && chapterList) {
+				chapterList.classList.add('visible');
+				volumeTitle.classList.add('expanded');
+				localStorage.setItem(`volume_${volumeId}_expanded`, 'true');
+			}
 		}
 
 		// 格式化章节内容
@@ -501,3 +545,4 @@
 	</script>
 </body>
 </html>
+
