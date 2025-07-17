@@ -245,7 +245,7 @@ const novelStructure = {
 				{ id: 230, title: "第一百八十三节 建立新体系", path: "183.txt" }
 			]
 		},
-				{
+		{
 			id: 3,
 			title: "第三卷 新社会",
 			path: "vol3",
