@@ -180,8 +180,9 @@ header {
 	margin-bottom: 2rem;
 	font-size: 1.2rem;
 }
-p {
+.chapter-text p {
 	text-indent: 2em;
+	margin-bottom: 1em;
 }
 
 /* 导航按钮样式 */
