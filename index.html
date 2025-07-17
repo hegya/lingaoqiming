@@ -5,8 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>临高启明</title>
 	<link rel="stylesheet" type="text/css" href="./style.css"/>
-	<script type="text/javascript" src="./chapters.js"></script>
-</head>
+	<script type="text/javascript" src="./chapters.js"></script></head>
 <body>
 	<!-- 头部 -->
 	<header>
@@ -84,7 +83,6 @@
 			</div>
 		</div>
 
-		<!-- 新增：段落缩进设置 -->
 		<div class="setting-item">
 			<label for="indentation">段落缩进</label>
 			<select id="indentation">
@@ -113,7 +111,7 @@
 			fontSize: 16,
 			lineHeight: 1.8,
 			theme: "light",
-			indentation: 2 // 新增：段落缩进设置
+			indentation: 2
 		};
 
 		// DOM元素
@@ -184,6 +182,14 @@
 					chapterItem.dataset.chapterId = chapter.id;
 					chapterItem.style.cursor = 'pointer';
 					chapterItem.style.padding = '0.25rem 0';
+
+					// 检查是否为当前章节并高亮
+					if (currentVolume && currentChapter && 
+						currentVolume.id === volume.id && 
+						currentChapter.id === chapter.id) {
+						chapterItem.classList.add('active-chapter');
+					}
+
 					chapterItem.addEventListener('click', () => {
 						loadChapter(volume.id, chapter.id);
 						closeSidebar();
@@ -307,6 +313,7 @@
 					// 显示章节内容
 					chapterContent.innerHTML = `
 						<h2 class="chapter-title">${chapter.title}</h2>
+						<p class="volume-title">${volume.title}</p>
 						<div id="chapterText" class="chapter-text">${formatChapterContent(content)}</div>
 					`;
 
@@ -321,14 +328,21 @@
 
 					// 展开当前卷
 					expandCurrentVolume(volumeId);
+
+					// 高亮当前章节
+					highlightCurrentChapter();
 				})
 				.catch(error => {
 					console.error('加载章节失败:', error);
 					chapterContent.innerHTML = `
 						<h2 class="chapter-title">加载失败</h2>
+						<p class="volume-title">${volume.title} - ${chapter.title}</p>
 						<p>无法加载该章节内容，请确保文件路径正确。</p>
 						<p>错误信息: ${error.message}</p>
 					`;
+
+					// 高亮当前章节
+					highlightCurrentChapter();
 				});
 		}
 
@@ -344,9 +358,12 @@
 			}
 		}
 
-		// 格式化章节内容
+		// 格式化章节内容（按行分段）
 		function formatChapterContent(content) {
+			// 按行分割文本（支持不同系统的换行符）
 			const lines = content.split(/\r?\n/);
+
+			// 过滤掉空行，并将每行用<p>标签包裹
 			return lines
 				.filter(line => line.trim() !== '')
 				.map(line => `<p>${line.trim()}</p>`)
@@ -441,14 +458,12 @@
 			if (chapterText) {
 				chapterText.style.fontSize = `${readingSettings.fontSize}px`;
 				chapterText.style.lineHeight = readingSettings.lineHeight;
-				// 新增：应用段落缩进
 				chapterText.style.textIndent = `${readingSettings.indentation}em`;
 			}
 
 			// 更新设置面板
 			fontSizeSelect.value = readingSettings.fontSize;
 			lineHeightSelect.value = readingSettings.lineHeight;
-			// 新增：更新段落缩进选择器
 			indentationSelect.value = readingSettings.indentation;
 		}
 
@@ -504,6 +519,30 @@
 			renderRecentList();
 		}
 
+		// 高亮当前章节
+		function highlightCurrentChapter() {
+			// 移除之前的高亮
+			document.querySelectorAll('.active-chapter').forEach(el => {
+				el.classList.remove('active-chapter');
+			});
+
+			// 如果有当前章节，添加高亮
+			if (currentVolume && currentChapter) {
+				const currentChapterEl = document.querySelector(`
+					li[data-volume-id="${currentVolume.id}"][data-chapter-id="${currentChapter.id}"]
+				`);
+
+				if (currentChapterEl) {
+					currentChapterEl.classList.add('active-chapter');
+
+					// 滚动到高亮章节（可选）
+					if (window.innerWidth < 768) { // 仅在移动视图下自动滚动
+						currentChapterEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					}
+				}
+			}
+		}
+
 		// 绑定事件监听器
 		function bindEventListeners() {
 			// 侧边栏切换
@@ -540,7 +579,6 @@
 			saveSettings.addEventListener('click', () => {
 				readingSettings.fontSize = parseInt(fontSizeSelect.value);
 				readingSettings.lineHeight = parseFloat(lineHeightSelect.value);
-				// 新增：保存段落缩进设置
 				readingSettings.indentation = parseInt(indentationSelect.value);
 
 				applyReadingSettings();
