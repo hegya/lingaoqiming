@@ -101,7 +101,8 @@
 		const readingSettings = {
 			fontSize: 16,
 			lineHeight: 1.8,
-			theme: "light"
+			theme: "light",
+			indentation: 2
 		};
 
 		// DOM元素
@@ -121,6 +122,7 @@
 		const fontSizeSelect = document.getElementById('fontSize');
 		const lineHeightSelect = document.getElementById('lineHeight');
 		const themeBtns = document.querySelectorAll('.theme-btn');
+		const indentationSelect = document.getElementById('indentation');
 
 		// 初始化应用
 		function initApp() {
@@ -275,7 +277,6 @@
 			// 显示加载中
 			chapterContent.innerHTML = `
 				<h2 class="chapter-title">加载中...</h2>
-				<p class="volume-title">${volume.title} - ${chapter.title}</p>
 			`;
 
 			// 更新导航按钮状态
@@ -294,8 +295,7 @@
 					// 显示章节内容
 					chapterContent.innerHTML = `
 						<h2 class="chapter-title">${chapter.title}</h2>
-						<p class="volume-title">${volume.title}</p>
-						<div id="chapterText" style="white-space: pre-wrap;">${formatChapterContent(content)}</div>
+						<div id="chapterText" class="chapter-text">${formatChapterContent(content)}</div>
 					`;
 
 					// 应用阅读设置
@@ -314,7 +314,6 @@
 					console.error('加载章节失败:', error);
 					chapterContent.innerHTML = `
 						<h2 class="chapter-title">加载失败</h2>
-						<p class="volume-title">${volume.title} - ${chapter.title}</p>
 						<p>无法加载该章节内容，请确保文件路径正确。</p>
 						<p>错误信息: ${error.message}</p>
 					`;
@@ -335,8 +334,11 @@
 
 		// 格式化章节内容
 		function formatChapterContent(content) {
-			// 简单的格式化：替换连续空行为单个空行
-			return content.replace(/\n{3,}/g, '\n\n');
+			// 将文本按段落分割（空行分隔）
+			const paragraphs = content.split(/\n\s*\n/).filter(paragraph => paragraph.trim() !== '');
+
+			// 用<p>标签包裹每个段落
+			return paragraphs.map(paragraph => `<p>${paragraph}</p>`).join('');
 		}
 
 		// 更新导航按钮状态
@@ -432,6 +434,7 @@
 			// 更新设置面板
 			fontSizeSelect.value = readingSettings.fontSize;
 			lineHeightSelect.value = readingSettings.lineHeight;
+			indentationSelect.value = readingSettings.indentation;
 		}
 
 		// 保存阅读设置
