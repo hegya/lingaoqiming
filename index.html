@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>临高启明阅读</title>
+	<title>临高启明</title>
 	<link rel="stylesheet" type="text/css" href="./style.css"/>
 	<script type="text/javascript" src="./chapters.js"></script>
 </head>
@@ -22,7 +22,7 @@
 	<!-- 侧边栏 -->
 	<div class="sidebar" id="sidebar">
 		<h2>卷列表</h2>
-		<ul id="volumeList"></ul>
+		<div id="volumeList"></div>
 
 		<h2>最近阅读</h2>
 		<ul id="recentList"></ul>
@@ -32,6 +32,7 @@
 	<div class="main-content" id="mainContent">
 		<div class="chapter-content" id="chapterContent">
 			<h2 class="chapter-title">欢迎使用临高启明阅读</h2>
+			<p class="volume-title">请从左侧选择一个章节开始阅读</p>
 			<p>这是一个简单的小说阅读应用，专为《临高启明》设计。你可以将每章内容保存为独立的txt文件，并通过目录结构组织它们。</p>
 			<p>应用特点：</p>
 			<ul>
@@ -83,6 +84,16 @@
 			</div>
 		</div>
 
+		<!-- 新增：段落缩进设置 -->
+		<div class="setting-item">
+			<label for="indentation">段落缩进</label>
+			<select id="indentation">
+				<option value="0">无缩进</option>
+				<option value="2" selected>2字符</option>
+				<option value="4">4字符</option>
+			</select>
+		</div>
+
 		<button class="save-settings" id="saveSettings">保存设置</button>
 	</div>
 
@@ -93,459 +104,466 @@
 	</div>
 
 	<script>
-	// 当前阅读状态
-	let currentChapter = null;
-	let currentVolume = null;
+		// 当前阅读状态
+		let currentChapter = null;
+		let currentVolume = null;
 
-	// 阅读设置
-	const readingSettings = {
-		fontSize: 16,
-		lineHeight: 1.8,
-		theme: "light",
-		indentation: 2 // 新增：段落缩进设置
-	};
+		// 阅读设置
+		const readingSettings = {
+			fontSize: 16,
+			lineHeight: 1.8,
+			theme: "light",
+			indentation: 2 // 新增：段落缩进设置
+		};
 
-	// DOM元素
-	const sidebar = document.getElementById('sidebar');
-	const menuToggle = document.getElementById('menuToggle');
-	const overlay = document.getElementById('overlay');
-	const volumeList = document.getElementById('volumeList');
-	const recentList = document.getElementById('recentList');
-	const chapterContent = document.getElementById('chapterContent');
-	const prevChapter = document.getElementById('prevChapter');
-	const nextChapter = document.getElementById('nextChapter');
-	const themeToggle = document.getElementById('themeToggle');
-	const openSettings = document.getElementById('openSettings');
-	const settingsPanel = document.getElementById('settingsPanel');
-	const closeSettings = document.getElementById('closeSettings');
-	const saveSettings = document.getElementById('saveSettings');
-	const fontSizeSelect = document.getElementById('fontSize');
-	const lineHeightSelect = document.getElementById('lineHeight');
-	const themeBtns = document.querySelectorAll('.theme-btn');
-	const indentationSelect = document.getElementById('indentation');
+		// DOM元素
+		const sidebar = document.getElementById('sidebar');
+		const menuToggle = document.getElementById('menuToggle');
+		const overlay = document.getElementById('overlay');
+		const volumeList = document.getElementById('volumeList');
+		const recentList = document.getElementById('recentList');
+		const chapterContent = document.getElementById('chapterContent');
+		const prevChapter = document.getElementById('prevChapter');
+		const nextChapter = document.getElementById('nextChapter');
+		const themeToggle = document.getElementById('themeToggle');
+		const openSettings = document.getElementById('openSettings');
+		const settingsPanel = document.getElementById('settingsPanel');
+		const closeSettings = document.getElementById('closeSettings');
+		const saveSettings = document.getElementById('saveSettings');
+		const fontSizeSelect = document.getElementById('fontSize');
+		const lineHeightSelect = document.getElementById('lineHeight');
+		const themeBtns = document.querySelectorAll('.theme-btn');
+		// 新增：段落缩进选择器
+		const indentationSelect = document.getElementById('indentation');
 
-	// 初始化应用
-	function initApp() {
-		// 加载保存的设置
-		loadSettings();
-		
-		// 应用保存的主题
-		applyTheme(readingSettings.theme);
-		
+		// 初始化应用
+		function initApp() {
+			// 加载保存的设置
+			loadSettings();
+
+			// 应用保存的主题
+			applyTheme(readingSettings.theme);
+
+			// 渲染卷列表
+			renderVolumeList();
+
+			// 渲染最近阅读列表
+			renderRecentList();
+
+			// 绑定事件监听器
+			bindEventListeners();
+
+			// 检查是否有保存的阅读位置
+			const savedPosition = localStorage.getItem('currentReadingPosition');
+			if (savedPosition) {
+				const { volumeId, chapterId } = JSON.parse(savedPosition);
+				loadChapter(volumeId, chapterId);
+			}
+		}
+
 		// 渲染卷列表
-		renderVolumeList();
-		
+		function renderVolumeList() {
+			volumeList.innerHTML = '';
+
+			novelStructure.volumes.forEach(volume => {
+				const volumeItem = document.createElement('div');
+				volumeItem.className = 'volume-item';
+
+				const volumeTitle = document.createElement('div');
+				volumeTitle.className = 'volume-title';
+				volumeTitle.innerHTML = `<span>${volume.title}</span>`;
+				volumeTitle.dataset.volumeId = volume.id;
+
+				const chapterList = document.createElement('ul');
+				chapterList.className = 'chapter-list';
+				chapterList.dataset.volumeId = volume.id;
+
+				volume.chapters.forEach(chapter => {
+					const chapterItem = document.createElement('li');
+					chapterItem.textContent = chapter.title;
+					chapterItem.dataset.volumeId = volume.id;
+					chapterItem.dataset.chapterId = chapter.id;
+					chapterItem.style.cursor = 'pointer';
+					chapterItem.style.padding = '0.25rem 0';
+					chapterItem.addEventListener('click', () => {
+						loadChapter(volume.id, chapter.id);
+						closeSidebar();
+					});
+
+					chapterList.appendChild(chapterItem);
+				});
+
+				// 折叠/展开卷
+				volumeTitle.addEventListener('click', () => {
+					const isExpanded = chapterList.classList.contains('visible');
+
+					if (isExpanded) {
+						chapterList.classList.remove('visible');
+						volumeTitle.classList.remove('expanded');
+					} else {
+						chapterList.classList.add('visible');
+						volumeTitle.classList.add('expanded');
+					}
+
+					// 保存卷的展开状态
+					localStorage.setItem(`volume_${volume.id}_expanded`, isExpanded ? 'false' : 'true');
+				});
+
+				// 检查是否保存了展开状态
+				const savedExpanded = localStorage.getItem(`volume_${volume.id}_expanded`);
+				if (savedExpanded === 'true') {
+					chapterList.classList.add('visible');
+					volumeTitle.classList.add('expanded');
+				}
+
+				volumeItem.appendChild(volumeTitle);
+				volumeItem.appendChild(chapterList);
+				volumeList.appendChild(volumeItem);
+			});
+		}
+
 		// 渲染最近阅读列表
-		renderRecentList();
-		
-		// 绑定事件监听器
-		bindEventListeners();
-		
-		// 检查是否有保存的阅读位置
-		const savedPosition = localStorage.getItem('currentReadingPosition');
-		if (savedPosition) {
-			const { volumeId, chapterId } = JSON.parse(savedPosition);
-			loadChapter(volumeId, chapterId);
-		}
-	}
+		function renderRecentList() {
+			recentList.innerHTML = '';
 
-	// 渲染卷列表
-	function renderVolumeList() {
-		volumeList.innerHTML = '';
-		
-		novelStructure.volumes.forEach(volume => {
-		const volumeItem = document.createElement('div');
-		volumeItem.className = 'volume-item';
+			const recentChapters = JSON.parse(localStorage.getItem('recentChapters') || '[]');
 
-		const volumeTitle = document.createElement('div');
-		volumeTitle.className = 'volume-title';
-		volumeTitle.innerHTML = `<span>${volume.title}</span>`;
-		volumeTitle.dataset.volumeId = volume.id;
-
-		const chapterList = document.createElement('ul');
-		chapterList.className = 'chapter-list';
-		chapterList.dataset.volumeId = volume.id;
-
-		volume.chapters.forEach(chapter => {
-			const chapterItem = document.createElement('li');
-			chapterItem.textContent = chapter.title;
-			chapterItem.dataset.volumeId = volume.id;
-			chapterItem.dataset.chapterId = chapter.id;
-			chapterItem.style.cursor = 'pointer';
-			chapterItem.style.padding = '0.25rem 0';
-			chapterItem.addEventListener('click', () => {
-			loadChapter(volume.id, chapter.id);
-			closeSidebar();
-			});
-			
-			chapterList.appendChild(chapterItem);
-		});
-
-		// 折叠/展开卷
-		volumeTitle.addEventListener('click', () => {
-			const isExpanded = chapterList.classList.contains('visible');
-			
-			if (isExpanded) {
-			chapterList.classList.remove('visible');
-			volumeTitle.classList.remove('expanded');
-			} else {
-			chapterList.classList.add('visible');
-			volumeTitle.classList.add('expanded');
+			if (recentChapters.length === 0) {
+				const emptyItem = document.createElement('li');
+				emptyItem.textContent = '暂无最近阅读记录';
+				emptyItem.style.color = '#666';
+				emptyItem.style.fontSize = '0.9rem';
+				recentList.appendChild(emptyItem);
+				return;
 			}
-			
-			// 保存卷的展开状态
-			localStorage.setItem(`volume_${volume.id}_expanded`, isExpanded ? 'false' : 'true');
-		});
 
-		// 检查是否保存了展开状态
-		const savedExpanded = localStorage.getItem(`volume_${volume.id}_expanded`);
-		if (savedExpanded === 'true') {
-			chapterList.classList.add('visible');
-			volumeTitle.classList.add('expanded');
-		}
+			recentChapters.forEach(({ volumeId, chapterId }) => {
+				const volume = findVolumeById(volumeId);
+				const chapter = findChapterById(volumeId, chapterId);
 
-		volumeItem.appendChild(volumeTitle);
-		volumeItem.appendChild(chapterList);
-		volumeList.appendChild(volumeItem);
-		});
-	}
+				if (volume && chapter) {
+					const recentItem = document.createElement('li');
+					recentItem.innerHTML = `
+						<div>${chapter.title}</div>
+						<div style="color: #666; font-size: 0.9rem;">${volume.title}</div>
+					`;
+					recentItem.dataset.volumeId = volumeId;
+					recentItem.dataset.chapterId = chapterId;
+					recentItem.style.cursor = 'pointer';
+					recentItem.style.padding = '0.5rem 0';
+					recentItem.addEventListener('click', () => {
+						loadChapter(volumeId, chapterId);
+						closeSidebar();
+					});
 
-	// 渲染最近阅读列表
-	function renderRecentList() {
-		recentList.innerHTML = '';
-		
-		const recentChapters = JSON.parse(localStorage.getItem('recentChapters') || '[]');
-		
-		if (recentChapters.length === 0) {
-		const emptyItem = document.createElement('li');
-		emptyItem.textContent = '暂无最近阅读记录';
-		emptyItem.style.color = '#666';
-		emptyItem.style.fontSize = '0.9rem';
-		recentList.appendChild(emptyItem);
-		return;
-		}
-		
-		recentChapters.forEach(({ volumeId, chapterId }) => {
-		const volume = findVolumeById(volumeId);
-		const chapter = findChapterById(volumeId, chapterId);
-
-		if (volume && chapter) {
-			const recentItem = document.createElement('li');
-			recentItem.innerHTML = `
-				<div>${chapter.title}</div>
-				<div style="color: #666; font-size: 0.9rem;">${volume.title}</div>
-			`;
-			recentItem.dataset.volumeId = volumeId;
-			recentItem.dataset.chapterId = chapterId;
-			recentItem.style.cursor = 'pointer';
-			recentItem.style.padding = '0.5rem 0';
-			recentItem.addEventListener('click', () => {
-			loadChapter(volumeId, chapterId);
-			closeSidebar();
+					recentList.appendChild(recentItem);
+				}
 			});
-			
-			recentList.appendChild(recentItem);
 		}
-		});
-	}
 
-	// 查找卷
-	function findVolumeById(volumeId) {
-		return novelStructure.volumes.find(volume => volume.id === volumeId);
-	}
-
-	// 查找章节
-	function findChapterById(volumeId, chapterId) {
-		const volume = findVolumeById(volumeId);
-		return volume?.chapters.find(chapter => chapter.id === chapterId);
-	}
-
-	// 加载章节内容
-	function loadChapter(volumeId, chapterId) {
-		const volume = findVolumeById(volumeId);
-		const chapter = findChapterById(volumeId, chapterId);
-		
-		if (!volume || !chapter) {
-			alert('章节未找到');
-			return;
+		// 查找卷
+		function findVolumeById(volumeId) {
+			return novelStructure.volumes.find(volume => volume.id === volumeId);
 		}
-		
-		// 更新当前阅读状态
-		currentVolume = volume;
-		currentChapter = chapter;
-		
-		// 显示加载中
-		chapterContent.innerHTML = `
-			<h2 class="chapter-title">加载中...</h2>
-		`;
-		
+
+		// 查找章节
+		function findChapterById(volumeId, chapterId) {
+			const volume = findVolumeById(volumeId);
+			return volume?.chapters.find(chapter => chapter.id === chapterId);
+		}
+
+		// 加载章节内容
+		function loadChapter(volumeId, chapterId) {
+			const volume = findVolumeById(volumeId);
+			const chapter = findChapterById(volumeId, chapterId);
+
+			if (!volume || !chapter) {
+				alert('章节未找到');
+				return;
+			}
+
+			// 更新当前阅读状态
+			currentVolume = volume;
+			currentChapter = chapter;
+
+			// 显示加载中
+			chapterContent.innerHTML = `
+				<h2 class="chapter-title">加载中...</h2>
+				<p class="volume-title">${volume.title} - ${chapter.title}</p>
+			`;
+
+			// 更新导航按钮状态
+			updateNavigationButtons();
+
+			// 从文件加载章节内容
+			const filePath = `${volume.path}/${chapter.path}`;
+			fetch(filePath)
+				.then(response => {
+					if (!response.ok) {
+						throw new Error('章节内容加载失败');
+					}
+					return response.text();
+				})
+				.then(content => {
+					// 显示章节内容
+					chapterContent.innerHTML = `
+						<h2 class="chapter-title">${chapter.title}</h2>
+						<p class="volume-title">${volume.title}</p>
+						<div id="chapterText" class="chapter-text">${formatChapterContent(content)}</div>
+					`;
+
+					// 应用阅读设置
+					applyReadingSettings();
+
+					// 保存阅读位置
+					saveReadingPosition();
+
+					// 添加到最近阅读
+					addToRecent(volumeId, chapterId);
+
+					// 展开当前卷
+					expandCurrentVolume(volumeId);
+				})
+				.catch(error => {
+					console.error('加载章节失败:', error);
+					chapterContent.innerHTML = `
+						<h2 class="chapter-title">加载失败</h2>
+						<p class="volume-title">${volume.title} - ${chapter.title}</p>
+						<p>无法加载该章节内容，请确保文件路径正确。</p>
+						<p>错误信息: ${error.message}</p>
+					`;
+				});
+		}
+
+		// 展开当前卷
+		function expandCurrentVolume(volumeId) {
+			const volumeTitle = document.querySelector(`.volume-title[data-volume-id="${volumeId}"]`);
+			const chapterList = document.querySelector(`.chapter-list[data-volume-id="${volumeId}"]`);
+
+			if (volumeTitle && chapterList) {
+				chapterList.classList.add('visible');
+				volumeTitle.classList.add('expanded');
+				localStorage.setItem(`volume_${volumeId}_expanded`, 'true');
+			}
+		}
+
+		// 格式化章节内容
+		function formatChapterContent(content) {
+			// 将文本按段落分割（空行分隔）
+			const paragraphs = content.split(/\n\s*\n/).filter(paragraph => paragraph.trim() !== '');
+
+			// 用<p>标签包裹每个段落
+			return paragraphs.map(paragraph => `<p>${paragraph}</p>`).join('');
+		}
+
 		// 更新导航按钮状态
-		updateNavigationButtons();
-		
-		// 从文件加载章节内容
-		const filePath = `${volume.path}/${chapter.path}`;
-		fetch(filePath)
-		.then(response => {
-			if (!response.ok) {
-				throw new Error('章节内容加载失败');
-			}
-			return response.text();
-		})
-		.then(content => {
-			// 显示章节内容
-			chapterContent.innerHTML = `
-				<h2 class="chapter-title">${chapter.title}</h2>
-				<div id="chapterText" class="chapter-text">${formatChapterContent(content)}</div>
-			`;
-			
-			// 应用阅读设置
-			applyReadingSettings();
-			
-			// 保存阅读位置
-			saveReadingPosition();
-			
-			// 添加到最近阅读
-			addToRecent(volumeId, chapterId);
-			
-			// 展开当前卷
-			expandCurrentVolume(volumeId);
-		})
-		.catch(error => {
-			console.error('加载章节失败:', error);
-			chapterContent.innerHTML = `
-				<h2 class="chapter-title">加载失败</h2>
-				<p>无法加载该章节内容，请确保文件路径正确。</p>
-				<p>错误信息: ${error.message}</p>
-			`;
-		});
-	}
-
-	// 展开当前卷
-	function expandCurrentVolume(volumeId) {
-		const volumeTitle = document.querySelector(`.volume-title[data-volume-id="${volumeId}"]`);
-		const chapterList = document.querySelector(`.chapter-list[data-volume-id="${volumeId}"]`);
-		
-		if (volumeTitle && chapterList) {
-			chapterList.classList.add('visible');
-			volumeTitle.classList.add('expanded');
-			localStorage.setItem(`volume_${volumeId}_expanded`, 'true');
-		}
-	}
-
-	// 格式化章节内容
-	function formatChapterContent(content) {
-		// 将文本按段落分割（空行分隔）
-		const paragraphs = content.split(/\n\s*\n/).filter(paragraph => paragraph.trim() !== '');
-		
-		// 用<p>标签包裹每个段落
-		return paragraphs.map(paragraph => `<p>${paragraph}</p>`).join('');
-	}
-
-	// 更新导航按钮状态
-	function updateNavigationButtons() {
-		if (!currentVolume || !currentChapter) {
-			prevChapter.disabled = true;
-			nextChapter.disabled = true;
-			return;
-		}
-		
-		const currentIndex = currentVolume.chapters.findIndex(ch => ch.id === currentChapter.id);
-		
-		// 上一章按钮
-		if (currentIndex > 0) {
-			prevChapter.disabled = false;
-			prevChapter.dataset.volumeId = currentVolume.id;
-			prevChapter.dataset.chapterId = currentVolume.chapters[currentIndex - 1].id;
-		} else {
-			prevChapter.disabled = true;
-			prevChapter.removeAttribute('data-volume-id');
-			prevChapter.removeAttribute('data-chapter-id');
-		}
-		
-		// 下一章按钮
-		if (currentIndex < currentVolume.chapters.length - 1) {
-			nextChapter.disabled = false;
-			nextChapter.dataset.volumeId = currentVolume.id;
-			nextChapter.dataset.chapterId = currentVolume.chapters[currentIndex + 1].id;
-		} else {
-		// 检查是否有下一卷
-			const nextVolumeIndex = novelStructure.volumes.findIndex(v => v.id === currentVolume.id) + 1;
-			if (nextVolumeIndex < novelStructure.volumes.length) {
-				nextChapter.disabled = false;
-				nextChapter.dataset.volumeId = novelStructure.volumes[nextVolumeIndex].id;
-				nextChapter.dataset.chapterId = novelStructure.volumes[nextVolumeIndex].chapters[0].id;
-			} else {
+		function updateNavigationButtons() {
+			if (!currentVolume || !currentChapter) {
+				prevChapter.disabled = true;
 				nextChapter.disabled = true;
-				nextChapter.removeAttribute('data-volume-id');
-				nextChapter.removeAttribute('data-chapter-id');
+				return;
 			}
-		}
-	}
 
-	// 打开侧边栏
-	function openSidebar() {
-		sidebar.classList.add('active');
-		overlay.classList.add('active');
-	}
+			const currentIndex = currentVolume.chapters.findIndex(ch => ch.id === currentChapter.id);
 
-	// 关闭侧边栏
-	function closeSidebar() {
-		sidebar.classList.remove('active');
-		overlay.classList.remove('active');
-	}
-
-	// 切换主题
-	function toggleTheme() {
-		readingSettings.theme = readingSettings.theme === 'light' ? 'dark' : 'light';
-		applyTheme(readingSettings.theme);
-		saveSettingsToStorage();
-	}
-
-	// 应用主题
-	function applyTheme(theme) {
-		const body = document.body;
-		
-		if (theme === 'light') {
-			body.classList.remove('dark-mode');
-			themeToggle.textContent = '🌙';
-		} else {
-			body.classList.add('dark-mode');
-			themeToggle.textContent = '☀️';
-		}
-		
-		// 更新主题按钮状态
-		themeBtns.forEach(btn => {
-			if (btn.dataset.theme === theme) {
-				btn.style.borderColor = '#8B4513';
+			// 上一章按钮
+			if (currentIndex > 0) {
+				prevChapter.disabled = false;
+				prevChapter.dataset.volumeId = currentVolume.id;
+				prevChapter.dataset.chapterId = currentVolume.chapters[currentIndex - 1].id;
 			} else {
-				btn.style.borderColor = 'transparent';
+				prevChapter.disabled = true;
+				prevChapter.removeAttribute('data-volume-id');
+				prevChapter.removeAttribute('data-chapter-id');
 			}
-		});
-	}
 
-	// 应用阅读设置
-	function applyReadingSettings() {
-		const chapterText = document.getElementById('chapterText');
-		if (chapterText) {
-			chapterText.style.fontSize = `${readingSettings.fontSize}px`;
-			chapterText.style.lineHeight = readingSettings.lineHeight;
-			chapterText.style.textIndent = `${readingSettings.indentation}em`;
-		}
-		
-		// 更新设置面板
-		fontSizeSelect.value = readingSettings.fontSize;
-		lineHeightSelect.value = readingSettings.lineHeight;
-		indentationSelect.value = readingSettings.indentation;
-	}
-
-	// 保存阅读设置
-	function saveSettingsToStorage() {
-		localStorage.setItem('readingSettings', JSON.stringify(readingSettings));
-	}
-
-	// 加载保存的设置
-	function loadSettings() {
-		const savedSettings = localStorage.getItem('readingSettings');
-		if (savedSettings) {
-			Object.assign(readingSettings, JSON.parse(savedSettings));
-		}
-	}
-
-	// 保存阅读位置
-	function saveReadingPosition() {
-		if (currentVolume && currentChapter) {
-			localStorage.setItem('currentReadingPosition', JSON.stringify({
-				volumeId: currentVolume.id,
-				chapterId: currentChapter.id
-			}));
-		}
-	}
-
-	// 添加到最近阅读
-	function addToRecent(volumeId, chapterId) {
-		let recentChapters = JSON.parse(localStorage.getItem('recentChapters') || '[]');
-		
-		// 检查是否已存在
-		const index = recentChapters.findIndex(
-			item => item.volumeId === volumeId && item.chapterId === chapterId
-		);
-		
-		// 如果存在，移除
-		if (index !== -1) {
-			recentChapters.splice(index, 1);
-		}
-		
-		// 添加到开头
-		recentChapters.unshift({ volumeId, chapterId });
-		
-		// 限制长度为5
-		if (recentChapters.length > 5) {
-			recentChapters.pop();
-		}
-		
-		// 保存
-		localStorage.setItem('recentChapters', JSON.stringify(recentChapters));
-		
-		// 重新渲染最近阅读列表
-		renderRecentList();
-	}
-
-	// 绑定事件监听器
-	function bindEventListeners() {
-		// 侧边栏切换
-		menuToggle.addEventListener('click', openSidebar);
-		overlay.addEventListener('click', closeSidebar);
-		
-		// 导航按钮
-		prevChapter.addEventListener('click', () => {
-			if (!prevChapter.disabled) {
-				loadChapter(parseInt(prevChapter.dataset.volumeId), parseInt(prevChapter.dataset.chapterId));
+			// 下一章按钮
+			if (currentIndex < currentVolume.chapters.length - 1) {
+				nextChapter.disabled = false;
+				nextChapter.dataset.volumeId = currentVolume.id;
+				nextChapter.dataset.chapterId = currentVolume.chapters[currentIndex + 1].id;
+			} else {
+				// 检查是否有下一卷
+				const nextVolumeIndex = novelStructure.volumes.findIndex(v => v.id === currentVolume.id) + 1;
+				if (nextVolumeIndex < novelStructure.volumes.length) {
+					nextChapter.disabled = false;
+					nextChapter.dataset.volumeId = novelStructure.volumes[nextVolumeIndex].id;
+					nextChapter.dataset.chapterId = novelStructure.volumes[nextVolumeIndex].chapters[0].id;
+				} else {
+					nextChapter.disabled = true;
+					nextChapter.removeAttribute('data-volume-id');
+					nextChapter.removeAttribute('data-chapter-id');
+				}
 			}
-		});
-		
-		nextChapter.addEventListener('click', () => {
-			if (!nextChapter.disabled) {
-				loadChapter(parseInt(nextChapter.dataset.volumeId), parseInt(nextChapter.dataset.chapterId));
-			}
-		});
-		
-		// 主题切换
-		themeToggle.addEventListener('click', toggleTheme);
-		
-		// 设置面板
-		openSettings.addEventListener('click', () => {
-			settingsPanel.classList.add('active');
-			applyReadingSettings();
-		});
-		
-		closeSettings.addEventListener('click', () => {
-			settingsPanel.classList.remove('active');
-		});
-		
-		// 保存设置
-		saveSettings.addEventListener('click', () => {
-			readingSettings.fontSize = parseInt(fontSizeSelect.value);
-			readingSettings.lineHeight = parseFloat(lineHeightSelect.value);
-			readingSettings.indentation = parseInt(indentationSelect.value);
+		}
 
-			applyReadingSettings();
+		// 打开侧边栏
+		function openSidebar() {
+			sidebar.classList.add('active');
+			overlay.classList.add('active');
+		}
+
+		// 关闭侧边栏
+		function closeSidebar() {
+			sidebar.classList.remove('active');
+			overlay.classList.remove('active');
+		}
+
+		// 切换主题
+		function toggleTheme() {
+			readingSettings.theme = readingSettings.theme === 'light' ? 'dark' : 'light';
+			applyTheme(readingSettings.theme);
 			saveSettingsToStorage();
+		}
 
-			settingsPanel.classList.remove('active');
-		});
-		
-		// 主题按钮
-		themeBtns.forEach(btn => {
-			btn.addEventListener('click', () => {
-				readingSettings.theme = btn.dataset.theme;
-				applyTheme(readingSettings.theme);
-				saveSettingsToStorage();
+		// 应用主题
+		function applyTheme(theme) {
+			const body = document.body;
+
+			if (theme === 'light') {
+				body.classList.remove('dark-mode');
+				themeToggle.textContent = '🌙';
+			} else {
+				body.classList.add('dark-mode');
+				themeToggle.textContent = '☀️';
+			}
+
+			// 更新主题按钮状态
+			themeBtns.forEach(btn => {
+				if (btn.dataset.theme === theme) {
+					btn.style.borderColor = '#8B4513';
+				} else {
+					btn.style.borderColor = 'transparent';
+				}
 			});
-		});
-	}
+		}
 
-	// 初始化应用
-	document.addEventListener('DOMContentLoaded', initApp);
-    </script>
+		// 应用阅读设置
+		function applyReadingSettings() {
+			const chapterText = document.getElementById('chapterText');
+			if (chapterText) {
+				chapterText.style.fontSize = `${readingSettings.fontSize}px`;
+				chapterText.style.lineHeight = readingSettings.lineHeight;
+				// 新增：应用段落缩进
+				chapterText.style.textIndent = `${readingSettings.indentation}em`;
+			}
+
+			// 更新设置面板
+			fontSizeSelect.value = readingSettings.fontSize;
+			lineHeightSelect.value = readingSettings.lineHeight;
+			// 新增：更新段落缩进选择器
+			indentationSelect.value = readingSettings.indentation;
+		}
+
+		// 保存阅读设置
+		function saveSettingsToStorage() {
+			localStorage.setItem('readingSettings', JSON.stringify(readingSettings));
+		}
+
+		// 加载保存的设置
+		function loadSettings() {
+			const savedSettings = localStorage.getItem('readingSettings');
+			if (savedSettings) {
+				Object.assign(readingSettings, JSON.parse(savedSettings));
+			}
+		}
+
+		// 保存阅读位置
+		function saveReadingPosition() {
+			if (currentVolume && currentChapter) {
+				localStorage.setItem('currentReadingPosition', JSON.stringify({
+					volumeId: currentVolume.id,
+					chapterId: currentChapter.id
+				}));
+			}
+		}
+
+		// 添加到最近阅读
+		function addToRecent(volumeId, chapterId) {
+			let recentChapters = JSON.parse(localStorage.getItem('recentChapters') || '[]');
+
+			// 检查是否已存在
+			const index = recentChapters.findIndex(
+				item => item.volumeId === volumeId && item.chapterId === chapterId
+			);
+
+			// 如果存在，移除
+			if (index !== -1) {
+				recentChapters.splice(index, 1);
+			}
+
+			// 添加到开头
+			recentChapters.unshift({ volumeId, chapterId });
+
+			// 限制长度为5
+			if (recentChapters.length > 5) {
+				recentChapters.pop();
+			}
+
+			// 保存
+			localStorage.setItem('recentChapters', JSON.stringify(recentChapters));
+
+			// 重新渲染最近阅读列表
+			renderRecentList();
+		}
+
+		// 绑定事件监听器
+		function bindEventListeners() {
+			// 侧边栏切换
+			menuToggle.addEventListener('click', openSidebar);
+			overlay.addEventListener('click', closeSidebar);
+
+			// 导航按钮
+			prevChapter.addEventListener('click', () => {
+				if (!prevChapter.disabled) {
+					loadChapter(parseInt(prevChapter.dataset.volumeId), parseInt(prevChapter.dataset.chapterId));
+				}
+			});
+
+			nextChapter.addEventListener('click', () => {
+				if (!nextChapter.disabled) {
+					loadChapter(parseInt(nextChapter.dataset.volumeId), parseInt(nextChapter.dataset.chapterId));
+				}
+			});
+
+			// 主题切换
+			themeToggle.addEventListener('click', toggleTheme);
+
+			// 设置面板
+			openSettings.addEventListener('click', () => {
+				settingsPanel.classList.add('active');
+				applyReadingSettings();
+			});
+
+			closeSettings.addEventListener('click', () => {
+				settingsPanel.classList.remove('active');
+			});
+
+			// 保存设置
+			saveSettings.addEventListener('click', () => {
+				readingSettings.fontSize = parseInt(fontSizeSelect.value);
+				readingSettings.lineHeight = parseFloat(lineHeightSelect.value);
+				// 新增：保存段落缩进设置
+				readingSettings.indentation = parseInt(indentationSelect.value);
+
+				applyReadingSettings();
+				saveSettingsToStorage();
+
+				settingsPanel.classList.remove('active');
+			});
+
+			// 主题按钮
+			themeBtns.forEach(btn => {
+				btn.addEventListener('click', () => {
+					readingSettings.theme = btn.dataset.theme;
+					applyTheme(readingSettings.theme);
+					saveSettingsToStorage();
+				});
+			});
+		}
+
+		// 初始化应用
+		document.addEventListener('DOMContentLoaded', initApp);
+	</script>
 </body>
 </html>
