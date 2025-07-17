@@ -353,7 +353,7 @@
 			const paragraphs = content.split(/\n\s*\n/).filter(paragraph => paragraph.trim() !== '');
 
 			// 用<p>标签包裹每个段落
-			return paragraphs.map(paragraph => `<p>${paragraph}</p>`).join('');
+			return paragraphs.map(paragraph => `<p>${paragraph.replace(/\n/g, '<br>')}</p>`).join('');
 		}
 
 		// 更新导航按钮状态
