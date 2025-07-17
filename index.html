@@ -294,7 +294,7 @@
 			// 显示加载中
 			chapterContent.innerHTML = `
 				<h2 class="chapter-title">加载中...</h2>
-				<p class="volume-title">${volume.title} - ${chapter.title}</p>
+//				<p class="volume-title">${volume.title} - ${chapter.title}</p>
 			`;
 
 			// 更新导航按钮状态
@@ -313,7 +313,7 @@
 					// 显示章节内容
 					chapterContent.innerHTML = `
 						<h2 class="chapter-title">${chapter.title}</h2>
-						<p class="volume-title">${volume.title}</p>
+//						<p class="volume-title">${volume.title}</p>
 						<div id="chapterText" class="chapter-text">${formatChapterContent(content)}</div>
 					`;
 
@@ -336,7 +336,7 @@
 					console.error('加载章节失败:', error);
 					chapterContent.innerHTML = `
 						<h2 class="chapter-title">加载失败</h2>
-						<p class="volume-title">${volume.title} - ${chapter.title}</p>
+//						<p class="volume-title">${volume.title} - ${chapter.title}</p>
 						<p>无法加载该章节内容，请确保文件路径正确。</p>
 						<p>错误信息: ${error.message}</p>
 					`;
