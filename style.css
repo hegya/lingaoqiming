@@ -1,6 +1,5 @@
 /* 基础样式 */
 body {
-	font-family: "Microsoft YaHei", sans-serif;
 	margin: 0;
 	padding: 0;
 	background-color: #f8f5f0;
@@ -86,7 +85,7 @@ header {
 /* 主内容样式 */
 .main-content {
 	flex: 1;
-	padding: 2rem;
+	padding: 1rem;
 	margin-left: 0;
 	transition: margin-left 0.3s;
 }
@@ -110,8 +109,8 @@ header {
 	max-width: 800px;
 	margin: 0 auto;
 	background-color: white;
-	padding: 2rem;
-	border-radius: 8px;
+	padding: 1rem;
+	border-radius: 4px;
 	box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 	line-height: 1.8;
 	transition: background-color 0.3s;
