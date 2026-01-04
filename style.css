@@ -17,7 +17,7 @@ body.dark-mode {
 header {
 	background-color: #8B4513;
 	color: white;
-	padding: 1rem;
+	padding: 0.5rem;
 	text-align: center;
 	box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
@@ -42,7 +42,7 @@ header {
 	transform: translateX(-100%);
 	transition: transform 0.3s;
 	z-index: 20;
-	padding-top: 4rem;
+	padding-top: 2rem;
 }
 
 .sidebar.active {
@@ -86,7 +86,7 @@ header {
 	display: flex;
 	align-items: center;
 	cursor: pointer;
-	padding: 0.5rem;
+	padding: 0.2rem;
 	background-color: #f8f5f0;
 	border-radius: 4px;
 }
