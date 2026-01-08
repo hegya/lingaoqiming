@@ -208,9 +208,9 @@
 				initMobileToggle();
 			} catch (err) {
 				document.getElementById('content').innerHTML = `
-					<h2 class="chapter-title">
+					<h3 class="chapter-title">
 						<button class="mobile-toggle" id="mobileToggle">☰ 目录</button>
-					</h2>
+					</h3>
 					目录加载失败：${err.message}
 				`;
 			}
@@ -274,10 +274,10 @@
 
 				// 渲染带目录按钮的标题栏
 				contentEl.innerHTML = `
-					<h2 class="chapter-title">
+					<h3 class="chapter-title">
 						${allChapters[currIdx].volName} · ${allChapters[currIdx].name}
 						<button class="mobile-toggle" id="mobileToggle">☰ 目录</button>
-					</h2>
+					</h3>
 					<div class="chapter-content">${content}</div>
 					<div class="nav-buttons">
 						<button class="nav-btn" ${!prevChap ? 'disabled' : ''}
@@ -296,10 +296,10 @@
 				window.scrollTo(0, 0);
 			} catch (err) {
 				contentEl.innerHTML = `
-					<h2 class="chapter-title">
-						章节加载失败：${err.message}
+					<h3 class="chapter-title">
 						<button class="mobile-toggle" id="mobileToggle">☰ 目录</button>
-					</h2>
+					</h3>
+					章节加载失败：${err.message}
 				`;
 			}
 		}
