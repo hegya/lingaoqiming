@@ -9,7 +9,6 @@
 			margin: 0;
 			padding: 0;
 			box-sizing: border-box;
-			font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 		}
 		body {
 			display: flex;
@@ -121,6 +120,7 @@
 			display: flex;
 			gap: 16px;
 			justify-content: space-between;
+			margin-bottom: 30px;
 		}
 		.nav-btn {
 			padding: 8px 16px;
@@ -136,7 +136,7 @@
 			cursor: not-allowed;
 		}
 		/* 响应式适配（核心优化） */
-		@media (max-width: 768px) {
+		@media (max-width: 1024px) {
 			/* 移动端默认隐藏目录栏，移到视口左侧 */
 			.sidebar {
 				position: fixed;
@@ -146,6 +146,7 @@
 				transform: translateX(-100%);
 				width: 250px;
 				max-width: 80%;
+				-webkit-transform: translateX(-100%);
 			}
 			/* 显示移动端目录开关按钮 */
 			.mobile-toggle {
