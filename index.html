@@ -4,7 +4,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>临高启明</title>
-	<link href="./main.css" rel="stylesheet" type="text/css" />
+	<link href="main.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
 	<!-- 左侧目录栏 -->
@@ -19,7 +19,7 @@
 		<h3 class="chapter-title">
 			<button class="mobile-toggle" id="mobileToggle">☰ 目录</button>
 		</h3>
-		<img src="./lgqm.webp" width="60%">
+		<img src="lgqm.webp" width="60%">
 	</div>
 
 	<script>
@@ -28,7 +28,7 @@
 
 		async function init() {
 			try {
-				const res = await fetch('./toc.json');
+				const res = await fetch('toc.json');
 				tocData = await res.json();
 				tocData.sort((a, b) => {
 					const numA = parseInt(a.name.replace('vol', ''));
