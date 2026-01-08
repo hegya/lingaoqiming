@@ -40,18 +40,18 @@
 		.content {
 			flex: 1;
 			padding: 24px;
-			padding-top: 40px; /* 给固定标题留空间 */
+			padding-top: 30px; /* 给固定标题留空间 */
 			overflow-y: auto;
 			background: #fff;
 			position: relative;
 		}
-		/* 固定置顶的章节标题（整合目录按钮） */
+		/* 固定置顶的章节标题 */
 		.chapter-title {
 			position: fixed;
 			top: 0;
 			left: 280px; /* 对应电脑端目录栏宽度 */
 			right: 0;
-			padding: 20px 24px;
+			padding: 10px 12px;
 			margin: 0;
 			background: #fff;
 			border-bottom: 1px solid #e1e4e8;
@@ -110,7 +110,7 @@
 			line-height: 2.5;
 			font-size: 20px;
 			white-space: pre-wrap;
-			margin-top: 40px;
+			margin-top: 30px;
 			margin-bottom: 32px;
 			color: #24292e;
 			padding: 8px 0;
@@ -165,7 +165,7 @@
 			}
 			.content {
 				padding: 16px;
-				padding-top: 40px;
+				padding-top: 30px;
 				width: 100%;
 			}
 			.chapter-content { font-size: 16px; }
@@ -184,8 +184,8 @@
 		<!-- 初始标题（未选章节时） -->
 		<h3 class="chapter-title">
 			<button class="mobile-toggle" id="mobileToggle">☰ 目录</button>
-			<img src="https://pic1.zhimg.com/70/v2-06d862358b1579242f269fa2c9d68762_1440w.avis" width="80%">
 		</h3>
+		<img src="https://pic1.zhimg.com/70/v2-06d862358b1579242f269fa2c9d68762_1440w.avis" width="60%">
 	</div>
 
 	<script>
@@ -208,9 +208,9 @@
 				initMobileToggle();
 			} catch (err) {
 				document.getElementById('content').innerHTML = `
-					<h3 class="chapter-title">
+					<h2 class="chapter-title">
 						<button class="mobile-toggle" id="mobileToggle">☰ 目录</button>
-					</h3>
+					</h2>
 					目录加载失败：${err.message}
 				`;
 			}
@@ -253,7 +253,7 @@
 			});
 		}
 
-		// 移动端目录开关（绑定到标题栏按钮）
+		// 移动端目录开关
 		function initMobileToggle() {
 			const toggleBtn = document.getElementById('mobileToggle');
 			const sidebar = document.getElementById('sidebar');
@@ -274,10 +274,10 @@
 
 				// 渲染带目录按钮的标题栏
 				contentEl.innerHTML = `
-					<h3 class="chapter-title">
-						${allChapters[currIdx].volName} · ${allChapters[currIdx].name}
+					<h2 class="chapter-title">
+						${allChapters[currIdx].volName}<br>${allChapters[currIdx].name}
 						<button class="mobile-toggle" id="mobileToggle">☰ 目录</button>
-					</h3>
+					</h2>
 					<div class="chapter-content">${content}</div>
 					<div class="nav-buttons">
 						<button class="nav-btn" ${!prevChap ? 'disabled' : ''}
@@ -296,9 +296,9 @@
 				window.scrollTo(0, 0);
 			} catch (err) {
 				contentEl.innerHTML = `
-					<h3 class="chapter-title">
+					<h2 class="chapter-title">
 						<button class="mobile-toggle" id="mobileToggle">☰ 目录</button>
-					</h3>
+					</h2>
 					章节加载失败：${err.message}
 				`;
 			}
