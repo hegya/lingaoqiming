@@ -1,0 +1,170 @@
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		body {
+			display: flex;
+			height: 100vh;
+			overflow: hidden;
+		}
+		/* 遮罩层 */
+		.mask {
+			display: none;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0,0,0,0.3);
+			z-index: 90;
+		}
+		/* 左侧目录栏 */
+		.sidebar {
+			width: 280px;
+			background: #f6f8fa;
+			border-right: 1px solid #e1e4e8;
+			overflow-y: auto;
+			padding: 16px;
+			z-index: 95;
+			transition: transform 0.3s ease;
+		}
+		/* 右侧内容区 */
+		.content {
+			flex: 1;
+			padding: 24px;
+			padding-top: 50px; /* 给固定标题留空间 */
+			overflow-y: auto;
+			background: #fff;
+			position: relative;
+		}
+		/* 固定置顶的章节标题 */
+		.chapter-title {
+			position: fixed;
+			top: 0;
+			left: 280px; /* 对应电脑端目录栏宽度 */
+			right: 0;
+			padding: 5px 6px;
+			margin: 0;
+			background: #fff;
+			border-bottom: 1px solid #e1e4e8;
+			z-index: 10;
+			color: #24292e;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+		/* 目录开关按钮 */
+		.mobile-toggle {
+			display: none; /* 电脑端隐藏 */
+			padding: 6px 10px;
+			background: #0366d6;
+			color: #fff;
+			border: none;
+			border-radius: 6px;
+			cursor: pointer;
+			font-size: 14px;
+		}
+		/* 目录样式 */
+		.toc {
+			list-style: none;
+		}
+		.vol-item {
+			cursor: pointer;
+			padding: 4px 8px;
+			border-radius: 3px;
+			font-weight: 500;
+			margin: 2px 0;
+		}
+		.vol-item:hover {
+			background: #e6ebf1;
+		}
+		.vol-item.expanded::before { content: "▼ "; font-size: 0.8em; }
+		.vol-item.collapsed::before { content: "▶ "; font-size: 0.8em; }
+		.chapters-list {
+			list-style: none;
+			margin: 4px 0 8px 20px;
+			display: none;
+		}
+		.vol-item.expanded + .chapters-list { display: block; }
+		.chapter-item {
+			padding: 4px 6px;
+			border-radius: 3px;
+			cursor: pointer;
+			color: #0366d6;
+			margin: 2px 0;
+		}
+		.chapter-item:hover {
+			background: #e6ebf1;
+			text-decoration: none;
+		}
+		/* 章节内容样式 */
+		.chapter-content {
+			line-height: 1.8;
+			font-size: 20px;
+			white-space: pre-wrap;
+			margin-top: 40px;
+			margin-bottom: 10px;
+			color: #24292e;
+			padding: 4px 0;
+		}
+		.chapter-content p {
+			text-indent: 2em;
+			margin: 0 0 0.5em 0;
+			line-height: 1.5;
+		}
+		/* 翻页按钮 */
+		.nav-buttons {
+			display: flex;
+			gap: 16px;
+			justify-content: space-between;
+			margin-bottom: 30px;
+			padding-bottom: 20px;
+		}
+		.nav-btn {
+			padding: 8px 16px;
+			background: #0366d6;
+			color: #fff;
+			border: none;
+			border-radius: 6px;
+			cursor: pointer;
+			font-size: 14px;
+		}
+		.nav-btn:disabled {
+			background: #94a3b8;
+			cursor: not-allowed;
+		}
+		/* 响应式适配（iPad/手机） */
+		@media (max-width: 1024px) {
+			.sidebar {
+				position: fixed;
+				left: 0;
+				top: 0;
+				height: 100%;
+				transform: translateX(-100%);
+				-webkit-transform: translateX(-100%);
+				width: 250px;
+				max-width: 80%;
+			}
+			/* 移动端显示标题栏内的目录按钮 */
+			.mobile-toggle {
+				display: block;
+			}
+			/* 移动端标题栏左对齐，适配无目录栏 */
+			.chapter-title {
+				left: 0;
+			}
+			.sidebar.show + .mask {
+				display: block;
+			}
+			.sidebar.show {
+				transform: translateX(0);
+				-webkit-transform: translateX(0);
+			}
+			.content {
+				padding: 16px;
+				padding-top: 50px;
+				width: 100%;
+			}
+			.chapter-content { font-size: 18px; }
+		}
