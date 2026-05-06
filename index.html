@@ -14,7 +14,20 @@
 			display: flex;
 			height: 100vh;
 			overflow: hidden;
+			transition: background 0.3s ease;
 		}
+		/* 深色模式 */
+		body.dark { background: #1a1a2e; }
+		body.dark .sidebar { background: #16213e; border-color: #333; }
+		body.dark .sidebar .vol-item { color: #e0e0e0; }
+		body.dark .sidebar .chapter-item { color: #61afef; }
+		body.dark .sidebar .vol-item:hover,
+		body.dark .sidebar .chapter-item:hover { background: #2d3748; }
+		body.dark .content { background: #1a1a2e; }
+		body.dark .chapter-title { background: #16213e; border-color: #333; color: #e0e0e0; }
+		body.dark .chapter-content { color: #e0e0e0; }
+		body.dark .nav-btn { background: #4a5568; }
+		body.dark .nav-btn:hover:not(:disabled) { background: #5a6578; }
 		/* 遮罩层 */
 		.mask {
 			display: none;
@@ -40,7 +53,7 @@
 		.content {
 			flex: 1;
 			padding: 24px;
-			padding-top: 50px; /* 给固定标题留空间 */
+			padding-top: 50px;
 			overflow-y: auto;
 			background: #fff;
 			position: relative;
@@ -49,7 +62,7 @@
 		.chapter-title {
 			position: fixed;
 			top: 0;
-			left: 280px; /* 对应电脑端目录栏宽度 */
+			left: 280px;
 			right: 0;
 			padding: 5px 6px;
 			margin: 0;
@@ -63,7 +76,7 @@
 		}
 		/* 目录开关按钮 */
 		.mobile-toggle {
-			display: none; /* 电脑端隐藏 */
+			display: none;
 			padding: 6px 10px;
 			background: #0366d6;
 			color: #fff;
@@ -72,6 +85,24 @@
 			cursor: pointer;
 			font-size: 14px;
 		}
+		/* 主题切换按钮 */
+		.theme-toggle {
+			position: fixed;
+			bottom: 20px;
+			right: 20px;
+			width: 44px;
+			height: 44px;
+			border-radius: 50%;
+			border: none;
+			cursor: pointer;
+			z-index: 100;
+			font-size: 20px;
+			background: #0366d6;
+			color: #fff;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+			transition: transform 0.2s ease;
+		}
+		.theme-toggle:hover { transform: scale(1.1); }
 		/* 目录样式 */
 		.toc {
 			list-style: none;
@@ -105,6 +136,10 @@
 			background: #e6ebf1;
 			text-decoration: none;
 		}
+		.chapter-item.active {
+			background: #0366d6;
+			color: #fff;
+		}
 		/* 章节内容样式 */
 		.chapter-content {
 			line-height: 1.8;
@@ -136,12 +171,16 @@
 			border-radius: 6px;
 			cursor: pointer;
 			font-size: 14px;
+			transition: background 0.2s ease;
+		}
+		.nav-btn:hover:not(:disabled) {
+			background: #005cc5;
 		}
 		.nav-btn:disabled {
 			background: #94a3b8;
 			cursor: not-allowed;
 		}
-		/* 响应式适配（iPad/手机） */
+		/* 响应式适配 */
 		@media (max-width: 1024px) {
 			.sidebar {
 				position: fixed;
@@ -153,11 +192,9 @@
 				width: 250px;
 				max-width: 80%;
 			}
-			/* 移动端显示标题栏内的目录按钮 */
 			.mobile-toggle {
 				display: block;
 			}
-			/* 移动端标题栏左对齐，适配无目录栏 */
 			.chapter-title {
 				left: 0;
 			}
@@ -174,6 +211,9 @@
 				width: 100%;
 			}
 			.chapter-content { font-size: 18px; }
+			.theme-toggle {
+				bottom: 70px;
+			}
 		}
 	</style>
 </head>
@@ -186,31 +226,36 @@
 	<div class="mask" id="mask"></div>
 	<!-- 右侧内容区 -->
 	<div class="content" id="content">
-		<!-- 初始标题（未选章节时） -->
 		<h3 class="chapter-title">
 			<button class="mobile-toggle" id="mobileToggle">☰ 目录</button>
 		</h3>
 		<img src="./lgqm.webp">
 	</div>
+	<!-- 主题切换按钮 -->
+	<button class="theme-toggle" id="themeToggle" title="切换主题">🌙</button>
 
 	<script>
 		let tocData = [];
 		let allChapters = [];
+		let currentPath = '';
+		const chapterCache = new Map();
 
 		async function init() {
 			try {
 				const res = await fetch('./toc.json');
 				tocData = await res.json();
 				tocData.sort((a, b) => {
-					const numA = parseInt(a.name.replace('vol', ''));
-					const numB = parseInt(b.name.replace('vol', ''));
+					const numA = parseInt(a.name.replace('第', '').replace('卷', ''));
+					const numB = parseInt(b.name.replace('第', '').replace('卷', ''));
 					return numA - numB;
 				});
 				allChapters = tocData.flatMap(vol => 
 					vol.chapters.map(chap => ({ ...chap, volName: vol.name }))
 				);
 				renderToc();
-				initMobileToggle();
+				initEventDelegation();
+				restoreProgress();
+				restoreTheme();
 			} catch (err) {
 				document.getElementById('content').innerHTML = `
 					<h2 class="chapter-title">
@@ -221,7 +266,6 @@
 			}
 		}
 
-		// 渲染目录（单一vol展开）
 		function renderToc() {
 			const tocEl = document.getElementById('toc');
 			tocData.forEach(vol => {
@@ -236,78 +280,147 @@
 					const chapEl = document.createElement('li');
 					chapEl.className = 'chapter-item';
 					chapEl.textContent = chap.name;
-					chapEl.onclick = () => {
-						loadChapter(chap.path);
-						if (window.innerWidth <= 1024) {
-							document.getElementById('sidebar').classList.remove('show');
-						}
-					};
+					chapEl.dataset.path = chap.path;
 					chaptersEl.appendChild(chapEl);
 				});
 				tocEl.appendChild(chaptersEl);
+			});
+		}
 
-				// 单一vol展开逻辑
-				volEl.onclick = () => {
+		function initEventDelegation() {
+			// 目录点击展开/折叠
+			document.getElementById('sidebar').addEventListener('click', (e) => {
+				if (e.target.classList.contains('vol-item')) {
 					document.querySelectorAll('.vol-item.expanded').forEach(item => {
 						item.classList.remove('expanded');
 						item.classList.add('collapsed');
 					});
-					volEl.classList.remove('collapsed');
-					volEl.classList.add('expanded');
-				};
+					e.target.classList.remove('collapsed');
+					e.target.classList.add('expanded');
+				} else if (e.target.classList.contains('chapter-item')) {
+					const path = e.target.dataset.path;
+					if (path) {
+						loadChapter(path);
+						if (window.innerWidth <= 1024) {
+							document.getElementById('sidebar').classList.remove('show');
+						}
+					}
+				}
 			});
+
+			// 移动端目录开关
+			document.getElementById('mobileToggle').addEventListener('click', () => {
+				document.getElementById('sidebar').classList.toggle('show');
+			});
+			document.getElementById('mask').addEventListener('click', () => {
+				document.getElementById('sidebar').classList.remove('show');
+			});
+
+			// 主题切换
+			document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
+			// 键盘快捷键
+			document.addEventListener('keydown', handleKeydown);
 		}
 
-		// 移动端目录开关
-		function initMobileToggle() {
-			const toggleBtn = document.getElementById('mobileToggle');
-			const sidebar = document.getElementById('sidebar');
-			const mask = document.getElementById('mask');
-			toggleBtn.addEventListener('click', () => sidebar.classList.toggle('show'));
-			mask.addEventListener('click', () => sidebar.classList.remove('show'));
+		function handleKeydown(e) {
+			const idx = allChapters.findIndex(chap => chap.path === currentPath);
+			if (e.key === 'ArrowLeft' && idx > 0) {
+				e.preventDefault();
+				loadChapter(allChapters[idx - 1].path);
+			} else if (e.key === 'ArrowRight' && idx >= 0 && idx < allChapters.length - 1) {
+				e.preventDefault();
+				loadChapter(allChapters[idx + 1].path);
+			}
 		}
 
-		// 加载章节内容（标题栏带目录按钮）
 		async function loadChapter(path) {
+			currentPath = path;
+			
+			if (chapterCache.has(path)) {
+				renderChapter(chapterCache.get(path), path);
+				return;
+			}
+
 			try {
 				const res = await fetch(path);
+				if (!res.ok) throw new Error(`HTTP ${res.status}`);
 				const content = await res.text();
-				const paragraphs = content.split('\n').filter(p => p.trim() !== '');
-				const contentHtml = paragraphs.map(p => `<p>${p}</p>`).join('');
-				const contentEl = document.getElementById('content');
-				const currIdx = allChapters.findIndex(chap => chap.path === path);
-				const prevChap = allChapters[currIdx - 1];
-				const nextChap = allChapters[currIdx + 1];
-
-				// 渲染带目录按钮的标题栏
-				contentEl.innerHTML = `
-					<h2 class="chapter-title">
-						${allChapters[currIdx].volName}<br>${allChapters[currIdx].name}
-						<button class="mobile-toggle" id="mobileToggle">☰ 目录</button>
-					</h2>
-					<div class="chapter-content">${contentHtml}</div>
-					<div class="nav-buttons">
-						<button class="nav-btn" ${!prevChap ? 'disabled' : ''}
-							onclick="loadChapter('${prevChap?.path || ''}')">
-							上一章
-						</button>
-						<button class="nav-btn" ${!nextChap ? 'disabled' : ''}
-							onclick="loadChapter('${nextChap?.path || ''}')">
-							下一章
-						</button>
-					</div>
-				`;
-				// 重新绑定目录按钮事件（内容刷新后）
-				initMobileToggle();
-				contentEl.scrollTop = 0;
-				window.scrollTo(0, 0);
+				chapterCache.set(path, content);
+				renderChapter(content, path);
 			} catch (err) {
+				const contentEl = document.getElementById('content');
 				contentEl.innerHTML = `
 					<h2 class="chapter-title">
 						<button class="mobile-toggle" id="mobileToggle">☰ 目录</button>
 					</h2>
 					章节加载失败：${err.message}
 				`;
+				currentPath = '';
+			}
+		}
+
+		function renderChapter(content, path) {
+			const paragraphs = content.split('\n').filter(p => p.trim() !== '');
+			const contentHtml = paragraphs.map(p => `<p>${p}</p>`).join('');
+			const contentEl = document.getElementById('content');
+			const currIdx = allChapters.findIndex(chap => chap.path === path);
+			const prevChap = allChapters[currIdx - 1];
+			const nextChap = allChapters[currIdx + 1];
+
+			contentEl.innerHTML = `
+				<h2 class="chapter-title">
+					${allChapters[currIdx].volName}<br>${allChapters[currIdx].name}
+					<button class="mobile-toggle" id="mobileToggle">☰ 目录</button>
+				</h2>
+				<div class="chapter-content">${contentHtml}</div>
+				<div class="nav-buttons">
+					<button class="nav-btn" ${!prevChap ? 'disabled' : ''}
+						onclick="loadChapter('${prevChap?.path || ''}')">
+						上一章
+					</button>
+					<button class="nav-btn" ${!nextChap ? 'disabled' : ''}
+						onclick="loadChapter('${nextChap?.path || ''}')">
+						下一章
+					</button>
+				</div>
+			`;
+			contentEl.scrollTop = 0;
+			window.scrollTo(0, 0);
+			saveProgress(path);
+			updateActiveChapter(path);
+		}
+
+		function updateActiveChapter(path) {
+			document.querySelectorAll('.chapter-item').forEach(el => {
+				el.classList.remove('active');
+				if (el.dataset.path === path) {
+					el.classList.add('active');
+				}
+			});
+		}
+
+		function saveProgress(path) {
+			localStorage.setItem('lgqm_current_chapter', path);
+		}
+
+		function restoreProgress() {
+			const savedPath = localStorage.getItem('lgqm_current_chapter');
+			if (savedPath && allChapters.some(chap => chap.path === savedPath)) {
+				loadChapter(savedPath);
+			}
+		}
+
+		function toggleTheme() {
+			const isDark = document.body.classList.toggle('dark');
+			localStorage.setItem('lgqm_theme', isDark ? 'dark' : 'light');
+			document.getElementById('themeToggle').textContent = isDark ? '☀️' : '🌙';
+		}
+
+		function restoreTheme() {
+			if (localStorage.getItem('lgqm_theme') === 'dark') {
+				document.body.classList.add('dark');
+				document.getElementById('themeToggle').textContent = '☀️';
 			}
 		}
 
