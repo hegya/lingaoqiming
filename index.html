@@ -291,12 +291,15 @@
 			// 目录点击展开/折叠
 			document.getElementById('sidebar').addEventListener('click', (e) => {
 				if (e.target.classList.contains('vol-item')) {
+					const isExpanded = e.target.classList.contains('expanded');
 					document.querySelectorAll('.vol-item.expanded').forEach(item => {
 						item.classList.remove('expanded');
 						item.classList.add('collapsed');
 					});
-					e.target.classList.remove('collapsed');
-					e.target.classList.add('expanded');
+					if (!isExpanded) {
+						e.target.classList.remove('collapsed');
+						e.target.classList.add('expanded');
+					}
 				} else if (e.target.classList.contains('chapter-item')) {
 					const path = e.target.dataset.path;
 					if (path) {
